@@ -2,21 +2,20 @@ from typing import Any, Dict, Optional
 import logging
 from pydantic import BaseModel, Field
 from crewai.tools import BaseTool
+from i18n import t
 
 logger = logging.getLogger(__name__)
 
 class ScrapflyScrapeWebsiteTool(BaseTool):
     """
     Tool to scrape websites using Scrapfly API.
-    
+
     This tool leverages Scrapfly's web scraping API to extract content from websites in various formats.
     It provides advanced web scraping capabilities with headless browser support, proxies, and anti-bot bypass features.
     """
-    
-    name: str = "Scrapfly web scraping API tool"
-    description: str = (
-        "Scrape a webpage url using Scrapfly and return its content as markdown or text"
-    )
+
+    name: str = t('tool.scrapfly')
+    description: str = t('tool.scrapfly_desc')
     
     def __init__(
         self,

@@ -2,10 +2,11 @@ import streamlit as st
 from streamlit import session_state as ss
 from my_crew import MyCrew
 import db_utils
+from i18n import t
 
 class PageCrews:
     def __init__(self):
-        self.name = "Crews"
+        self.name = t("page.crews")
 
     def create_crew(self):
         crew = MyCrew()
@@ -27,5 +28,5 @@ class PageCrews:
                 if crew.edit:
                     editing = True
             if len(ss.crews) == 0:
-                st.write("No crews defined yet.")
-            st.button('Create crew', on_click=self.create_crew, disabled=editing)
+                st.write(t("crew.none_defined"))
+            st.button(t("button.create_crew"), on_click=self.create_crew, disabled=editing)

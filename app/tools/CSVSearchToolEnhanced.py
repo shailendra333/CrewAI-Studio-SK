@@ -2,26 +2,25 @@ from pydantic import BaseModel, Field
 from crewai_tools.rag.data_types import DataType
 from crewai_tools.tools.rag.rag_tool import RagTool
 from typing import Any, Optional, Type
+from i18n import t
 
 class FixedCSVSearchToolSchema(BaseModel):
     """Input for CSVSearchTool when CSV is pre-loaded."""
 
     search_query: str = Field(
         ...,
-        description="Mandatory search query you want to use to search the CSV's content",
+        description=t('tool.csv_search_query'),
     )
 
 
 class CSVSearchToolSchema(FixedCSVSearchToolSchema):
     """Input for CSVSearchTool when CSV needs to be specified."""
 
-    csv: str = Field(..., description="File path or URL of a CSV file to be searched")
+    csv: str = Field(..., description=t('tool.csv_file_path'))
 
 class CSVSearchToolEnhanced(RagTool):
-    name: str = "Search a CSV's content"
-    description: str = (
-        "A tool that can be used to semantic search a query from a CSV's content."
-    )
+    name: str = t('tool.csv_search')
+    description: str = t('tool.csv_search_desc')
     args_schema: Type[BaseModel] = CSVSearchToolSchema
 
     def __init__(
@@ -41,7 +40,7 @@ class CSVSearchToolEnhanced(RagTool):
         """
         # Auto-generate description if CSV provided and no custom description
         if csv and "description" not in kwargs:
-            kwargs["description"] = f"A tool that can be used to semantic search a query the {csv} CSV's content."
+            kwargs["description"] = t('tool.csv_search_file_desc', csv=csv)
         
         # If CSV is provided, switch to fixed schema (no csv parameter needed)
         if csv:
@@ -86,13 +85,13 @@ class CSVSearchToolEnhanced(RagTool):
         """
         # Validate inputs
         if not search_query:
-            return "Error: Please provide a search query to search the CSV's content."
-        
+            return t('tool.error_no_search_query')
+
         # If CSV provided dynamically and tool not pre-configured, add it
         if csv is not None and self.args_schema == CSVSearchToolSchema:
             self.add(csv, data_type=DataType.CSV)
         elif csv is None and self.args_schema == CSVSearchToolSchema:
-            return "Error: Please provide a CSV file path to search."
+            return t('tool.error_no_csv_file')
         
         # Execute search using parent's _run method
         return super()._run(

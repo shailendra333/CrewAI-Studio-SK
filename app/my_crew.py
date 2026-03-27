@@ -5,6 +5,7 @@ from streamlit import session_state as ss
 from datetime import datetime
 from llms import llm_providers_and_models, create_llm
 import db_utils
+from i18n import t
 
 class MyCrew:
     def __init__(self, id=None, name=None, agents=None, tasks=None, process=None, cache=None, max_rpm=None, verbose=None, manager_llm=None, manager_agent=None, created_at=None, memory=None, planning=None, planning_llm=None, knowledge_source_ids=None):
@@ -217,11 +218,11 @@ class MyCrew:
     def is_valid(self, show_warning=False):
         if len(self.agents) == 0:
             if show_warning:
-                st.warning(f"Crew {self.name} has no agents")
+                st.warning(t('warning.crew_no_agents', name=self.name))
             return False
         if len(self.tasks) == 0:
             if show_warning:
-                st.warning(f"Crew {self.name} has no tasks")
+                st.warning(t('warning.crew_no_tasks', name=self.name))
             return False
         if any([not agent.is_valid(show_warning=show_warning) for agent in self.agents]):
             return False
@@ -229,11 +230,11 @@ class MyCrew:
             return False
         if self.process == Process.hierarchical and not (self.manager_llm or self.manager_agent):
             if show_warning:
-                st.warning(f"Crew {self.name} has no manager agent or manager llm set for hierarchical process")
+                st.warning(t('warning.crew_no_manager', name=self.name))
             return False
         if self.planning and not self.planning_llm:
             if show_warning:
-                st.warning(f"Crew {self.name} has planning enabled but no planning LLM selected")
+                st.warning(t('warning.crew_no_planning_llm', name=self.name))
             return False
         return True
 
@@ -265,22 +266,33 @@ class MyCrew:
         
         if self.edit:
             with st.container(border=True):
-                st.text_input("Name (just id, it doesn't affect anything)", value=self.name, key=name_key, on_change=self.update_name)
-                st.selectbox("Process", options=[Process.sequential, Process.hierarchical], index=[Process.sequential, Process.hierarchical].index(self.process), key=process_key, on_change=self.update_process)
-                st.multiselect("Agents", options=[agent.role for agent in ss.agents], default=[agent.role for agent in self.agents], key=agents_key, on_change=self.update_agents)                
+                st.text_input(t("crew.name"), value=self.name, key=name_key, on_change=self.update_name)
+                process_display = {
+                    Process.sequential: t("crew.process_sequential"),
+                    Process.hierarchical: t("crew.process_hierarchical")
+                }
+                selected_process = st.selectbox(
+                    t("crew.process"),
+                    options=[Process.sequential, Process.hierarchical],
+                    index=[Process.sequential, Process.hierarchical].index(self.process),
+                    format_func=lambda x: process_display[x],
+                    key=process_key,
+                    on_change=self.update_process
+                )
+                st.multiselect(t("crew.agents"), options=[agent.role for agent in ss.agents], default=[agent.role for agent in self.agents], key=agents_key, on_change=self.update_agents)
                 # Filter tasks by selected agents
                 available_tasks = [task for task in ss.tasks if task.agent and task.agent.id in [agent.id for agent in self.agents]]
                 available_task_ids = [task.id for task in available_tasks]
-                default_task_ids = [task.id for task in self.tasks if task.id in available_task_ids]             
-                st.multiselect("Tasks", options=available_task_ids, default=default_task_ids, format_func=lambda x: next(task.description for task in ss.tasks if task.id == x), key=tasks_key, on_change=self.update_tasks)                
-                st.selectbox("Manager LLM", options=["None"] + llm_providers_and_models(), index=0 if self.manager_llm is None else llm_providers_and_models().index(self.manager_llm) + 1, key=manager_llm_key, on_change=self.update_manager_llm, disabled=(self.process != Process.hierarchical))
-                st.selectbox("Manager Agent", options=["None"] + [agent.role for agent in ss.agents], index=0 if self.manager_agent is None else [agent.role for agent in ss.agents].index(self.manager_agent.role) + 1, key=manager_agent_key, on_change=self.update_manager_agent, disabled=(self.process != Process.hierarchical))
-                st.checkbox("Verbose", value=self.verbose, key=verbose_key, on_change=self.update_verbose)
-                st.checkbox("Memory", value=self.memory, key=memory_key, on_change=self.update_memory)
-                st.checkbox("Cache", value=self.cache, key=cache_key, on_change=self.update_cache)
-                st.checkbox("Planning", value=self.planning, key=planning_key, on_change=self.update_planning)
-                st.selectbox("Planning LLM", options=["None"] + llm_providers_and_models(), index=0 if self.planning_llm is None else llm_providers_and_models().index(self.planning_llm) + 1, key=planning_llm_key, on_change=self.update_planning_llm, disabled=not self.planning)
-                st.number_input("Max req/min", value=self.max_rpm, key=max_rpm_key, on_change=self.update_max_rpm)  
+                default_task_ids = [task.id for task in self.tasks if task.id in available_task_ids]
+                st.multiselect(t("crew.tasks"), options=available_task_ids, default=default_task_ids, format_func=lambda x: next(task.description for task in ss.tasks if task.id == x), key=tasks_key, on_change=self.update_tasks)
+                st.selectbox(t("crew.manager_llm"), options=["None"] + llm_providers_and_models(), index=0 if self.manager_llm is None else llm_providers_and_models().index(self.manager_llm) + 1, key=manager_llm_key, on_change=self.update_manager_llm, disabled=(self.process != Process.hierarchical))
+                st.selectbox(t("crew.manager_agent"), options=["None"] + [agent.role for agent in ss.agents], index=0 if self.manager_agent is None else [agent.role for agent in ss.agents].index(self.manager_agent.role) + 1, key=manager_agent_key, on_change=self.update_manager_agent, disabled=(self.process != Process.hierarchical))
+                st.checkbox(t("crew.verbose"), value=self.verbose, key=verbose_key, on_change=self.update_verbose)
+                st.checkbox(t("crew.memory"), value=self.memory, key=memory_key, on_change=self.update_memory)
+                st.checkbox(t("crew.cache"), value=self.cache, key=cache_key, on_change=self.update_cache)
+                st.checkbox(t("crew.planning"), value=self.planning, key=planning_key, on_change=self.update_planning)
+                st.selectbox(t("crew.planning_llm"), options=["None"] + llm_providers_and_models(), index=0 if self.planning_llm is None else llm_providers_and_models().index(self.planning_llm) + 1, key=planning_llm_key, on_change=self.update_planning_llm, disabled=not self.planning)
+                st.number_input(t("crew.max_requests"), value=self.max_rpm, key=max_rpm_key, on_change=self.update_max_rpm)  
                 # for some reason knowledge sources for crews are not working, use the knowledge sources in the agents instead
                 # if 'knowledge_sources' in ss and len(ss.knowledge_sources) > 0:
                 #     knowledge_source_options = [ks.id for ks in ss.knowledge_sources]
@@ -300,41 +312,45 @@ class MyCrew:
                 #         on_change=self.update_knowledge_sources
                 #     )
 
-                st.button("Save", on_click=self.set_editable, args=(False,), key=rnd_id())
+                st.button(t("button.save"), on_click=self.set_editable, args=(False,), key=rnd_id())
         else:
             fix_columns_width()
-            expander_title = f"Crew: {self.name}" if self.is_valid() else f"❗ Crew: {self.name}"
+            expander_title = t("crew.title", name=self.name) if self.is_valid() else f"❗ {t('crew.title', name=self.name)}"
             with st.expander(expander_title, expanded=expanded):
-                st.markdown(f"**Process:** {self.process}")
+                process_display = {
+                    Process.sequential: t("crew.process_sequential"),
+                    Process.hierarchical: t("crew.process_hierarchical")
+                }
+                st.markdown(f"**{t('crew.process')}:** {process_display.get(self.process, str(self.process))}")
                 if self.process == Process.hierarchical:
-                    st.markdown(f"**Manager LLM:** {self.manager_llm}")
-                    st.markdown(f"**Manager Agent:** {self.manager_agent.role if self.manager_agent else 'None'}")
-                st.markdown(f"**Verbose:** {self.verbose}")
-                st.markdown(f"**Memory:** {self.memory}")
-                st.markdown(f"**Cache:** {self.cache}")
-                st.markdown(f"**Planning:** {self.planning}")
+                    st.markdown(f"**{t('crew.manager_llm')}:** {self.manager_llm}")
+                    st.markdown(f"**{t('crew.manager_agent')}:** {self.manager_agent.role if self.manager_agent else 'None'}")
+                st.markdown(f"**{t('crew.verbose')}:** {self.verbose}")
+                st.markdown(f"**{t('crew.memory')}:** {self.memory}")
+                st.markdown(f"**{t('crew.cache')}:** {self.cache}")
+                st.markdown(f"**{t('crew.planning')}:** {self.planning}")
                 if self.planning and self.planning_llm:
-                    st.markdown(f"**Planning LLM:** {self.planning_llm}")
-                st.markdown(f"**Max req/min:** {self.max_rpm}")
-                st.markdown("**Tasks:**")
+                    st.markdown(f"**{t('crew.planning_llm')}:** {self.planning_llm}")
+                st.markdown(f"**{t('crew.max_requests')}:** {self.max_rpm}")
+                st.markdown(f"**{t('crew.tasks_section')}:**")
                 for i, task in enumerate([task for task in self.tasks if task.agent and task.agent.id in [agent.id for agent in self.agents]], 1):
                     with st.container(border=True):
-                        async_tag = "(async)" if task.async_execution else ""
+                        async_tag = t("crew.async_tag") if task.async_execution else ""
                         st.markdown(f"**{i}.{async_tag}  {task.description}**")
-                        st.markdown(f"**Agent:** {task.agent.role if task.agent else 'None'}")
+                        st.markdown(f"**{t('task.agent')}:** {task.agent.role if task.agent else 'None'}")
                         tools_list = ", ".join([tool.name for tool in task.agent.tools]) if task.agent else "None"
-                        st.markdown(f" **Tools:** {tools_list}")
+                        st.markdown(f" **{t('agent.tools')}:** {tools_list}")
                         st.markdown(f" **LLM:** {task.agent.llm_provider_model}")
                 if self.knowledge_source_ids and 'knowledge_sources' in ss:
                     source_names = [ks.name for ks in ss.knowledge_sources if ks.id in self.knowledge_source_ids]
-                    st.markdown(f"**Knowledge Sources:** {', '.join(source_names)}")
+                    st.markdown(f"**{t('crew.knowledge_sources')}:** {', '.join(source_names)}")
                 if buttons:
                     col1, col2 = st.columns(2)
-                    with col1:                    
-                        st.button("Edit", on_click=self.set_editable, key=rnd_id(), args=(True,))
-                    with col2:                   
+                    with col1:
+                        st.button(t("button.edit"), on_click=self.set_editable, key=rnd_id(), args=(True,))
+                    with col2:
                         # Instead of direct delete, open modal for cascade delete handling
-                        st.button("Delete", on_click=self.request_delete_modal, key=rnd_id())
+                        st.button(t("button.delete"), on_click=self.request_delete_modal, key=rnd_id())
                 self.is_valid(show_warning=True)
                 # If this crew was selected for deletion, draw the modal here
                 if ss.get('delete_crew_target_id') == self.id:
@@ -401,16 +417,16 @@ class MyCrew:
         deps = self.analyze_dependencies()
 
         if not hasattr(st, 'dialog'):
-            st.error("This Streamlit version does not support st.dialog – please upgrade Streamlit.")
+            st.error(t("crew.invalid_warning"))
             return
 
         @st.dialog(f"Delete crew: {self.name}")
         def _dlg():
-            st.markdown("### Confirm deleting entire crew")
-            st.markdown("This action will delete the selected crew. You can optionally delete its agents and tasks.")
-            st.markdown("If an item is used elsewhere it's marked as a conflict and unchecked by default.")
+            st.markdown(f"### {t('crew.confirm_delete_title')}")
+            st.markdown(t("crew.confirm_delete_message"))
+            st.markdown(t("crew.conflict_note"))
 
-            st.markdown("#### Agents")
+            st.markdown(f"#### {t('crew.agents_section')}")
             for info in deps['agents']:
                 agent = info['obj']
                 conflict = len(info['conflicts']) > 0
@@ -419,7 +435,7 @@ class MyCrew:
                 default_val = False if conflict else True
                 st.checkbox(label, value=default_val if checkbox_key not in ss else ss[checkbox_key], key=checkbox_key, help=("Conflict: " + " | ".join(info['conflicts'])) if conflict else None)
 
-            st.markdown("#### Tasks")
+            st.markdown(f"#### {t('crew.tasks_section')}")
             for info in deps['tasks']:
                 task = info['obj']
                 conflict = len(info['conflicts']) > 0
@@ -431,16 +447,16 @@ class MyCrew:
             st.divider()
             col_a, col_b, col_c = st.columns(3)
             with col_a:
-                if st.button("Cancel"):
+                if st.button(t("button.cancel")):
                     self.clear_delete_modal()
                     st.rerun()
             with col_b:
-                if st.button("Delete crew only"):
+                if st.button(t("button.confirm_delete")):
                     self.delete()
                     self.clear_delete_modal()
                     st.rerun()
             with col_c:
-                if st.button("Delete crew + selected items", type="primary"):
+                if st.button(t("button.delete_with_items"), type="primary"):
                     selected_agent_ids = [info['obj'].id for info in deps['agents'] if ss.get(f"del_agent_{info['obj'].id}")]
                     selected_task_ids = [info['obj'].id for info in deps['tasks'] if ss.get(f"del_task_{info['obj'].id}")]
                     if selected_task_ids:

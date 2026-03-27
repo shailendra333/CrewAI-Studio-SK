@@ -5,10 +5,11 @@ import db_utils
 import os
 import shutil
 from pathlib import Path
+from i18n import t
 
 class PageKnowledge:
     def __init__(self):
-        self.name = "Knowledge"
+        self.name = t("page.knowledge")
 
     def create_knowledge_source(self):
         knowledge_source = MyKnowledgeSource()
@@ -35,19 +36,16 @@ class PageKnowledge:
 
     def draw(self):
         st.subheader(self.name)
-        
+
         # Instruction
-        st.markdown("""
-        Knowledge sources are used to provide external information to agents.
-        You can create different types of knowledge sources and assign them to agents or crews.
-        """)
-        
+        st.markdown(t("knowledge.description"))
+
         # Create knowledge directory if it doesn't exist
         os.makedirs("knowledge", exist_ok=True)
-        
+
         # Clear knowledge button
-        st.button("Clear All Knowledge Stores", on_click=self.clear_knowledge, 
-                  help="This will clear all knowledge stores in CrewAI, removing cached embeddings")
+        st.button(t("button.clear_knowledge"), on_click=self.clear_knowledge,
+                  help=t("knowledge.clear_help"))
         
         # Display existing knowledge sources
         editing = False
@@ -60,6 +58,6 @@ class PageKnowledge:
                 editing = True
                 
         if len(ss.knowledge_sources) == 0:
-            st.write("No knowledge sources defined yet.")
-            
-        st.button('Create Knowledge Source', on_click=self.create_knowledge_source, disabled=editing)
+            st.write(t("knowledge.none_defined"))
+
+        st.button(t("button.create_knowledge"), on_click=self.create_knowledge_source, disabled=editing)

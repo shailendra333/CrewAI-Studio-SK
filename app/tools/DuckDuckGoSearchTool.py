@@ -2,21 +2,22 @@ from crewai.tools import BaseTool
 from typing import Optional, List, Type
 from duckduckgo_search import DDGS
 from pydantic import BaseModel, Field, model_validator
+from i18n import t
 
 class DuckDuckGoSearchToolInputSchema(BaseModel):
-    query: str = Field(..., description="The specific query")
-    max_results: int = Field(5, description="Maximum results")
-    region: str = Field("fr-fr", description="Search region")
-    safesearch: str = Field("moderate", description="Safesearch type")
+    query: str = Field(..., description=t('tool.search_query'))
+    max_results: int = Field(5, description=t('tool.max_results'))
+    region: str = Field("fr-fr", description=t('tool.search_region'))
+    safesearch: str = Field("moderate", description=t('tool.safesearch'))
 
 class DuckDuckGoSearchToolInputSchemaFull(DuckDuckGoSearchToolInputSchema):
-    domains: Optional[List[str]] = Field(default=None, description="Specific domains to search")
-    time: Optional[str] = Field(None, description="Time range for results (d=day, w=week, m=month, y=year)")
+    domains: Optional[List[str]] = Field(default=None, description=t('tool.search_domains'))
+    time: Optional[str] = Field(None, description=t('tool.search_time_range'))
 
 
 class DuckDuckGoSearchTool(BaseTool):
-    name: str = "DuckDuckGo Search"
-    description: str = "Search the web using DuckDuckGo and return relevant results."
+    name: str = t('tool.duckduckgo_search')
+    description: str = t('tool.duckduckgo_search_desc')
     args_schema: Type[BaseModel] = DuckDuckGoSearchToolInputSchema
 
     def __init__(self, **kwargs):
@@ -60,9 +61,9 @@ class DuckDuckGoSearchTool(BaseTool):
 
             # Format the results
             if not results:
-                return "No results found for the query."
+                return t('tool.no_results')
 
-            formatted_results = "Search Results:\n\n"
+            formatted_results = t('tool.search_results_header') + "\n\n"
             for i, result in enumerate(results, 1):
                 formatted_results += f"{i}. {result['title']}\n"
                 formatted_results += f"   {result['body']}\n"
@@ -71,7 +72,7 @@ class DuckDuckGoSearchTool(BaseTool):
             return formatted_results
 
         except Exception as e:
-            return f"Error performing search: {str(e)}"
+            return t('tool.error_search', error=str(e))
 
     def run(self, inputs: DuckDuckGoSearchToolInputSchema):
         return self._run(

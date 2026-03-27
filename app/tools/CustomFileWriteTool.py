@@ -2,19 +2,20 @@ import os
 from typing import Optional, Dict, Any, Type
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field, model_validator
+from i18n import t
 
 class FixedCustomFileWriteToolInputSchema(BaseModel):
-    content: str = Field(..., description="The content to write or append to the file")
-    mode: str = Field(..., description="Mode to open the file in, either 'w' or 'a'")
+    content: str = Field(..., description=t('tool.file_content'))
+    mode: str = Field(..., description=t('tool.file_mode'))
 
 class CustomFileWriteToolInputSchema(FixedCustomFileWriteToolInputSchema):
-    content: str = Field(..., description="The content to write or append to the file")
-    mode: str = Field(..., description="Mode to open the file in, either 'w' or 'a'")
-    filename: str = Field(..., description="The name of the file to write to or append")
+    content: str = Field(..., description=t('tool.file_content'))
+    mode: str = Field(..., description=t('tool.file_mode'))
+    filename: str = Field(..., description=t('tool.filename'))
 
 class CustomFileWriteTool(BaseTool):
-    name: str = "Write File"
-    description: str = "Tool to write or append to files"
+    name: str = t('tool.file_write')
+    description: str = t('tool.file_write_desc')
     args_schema: Type[BaseModel] = CustomFileWriteToolInputSchema
     filename: Optional[str] = None
 
@@ -39,7 +40,7 @@ class CustomFileWriteTool(BaseTool):
         full_path = os.path.abspath(os.path.join(self._base_folder, chosen_file))
 
         if not full_path.startswith(os.path.abspath(self._base_folder)):
-            raise ValueError("Access outside the base directory is not allowed.")  #TODO: add validations for path traversal
+            raise ValueError(t('tool.access_denied'))  #TODO: add validations for path traversal
 
         return full_path
 
@@ -48,13 +49,17 @@ class CustomFileWriteTool(BaseTool):
         try:
             with open(full_path, 'a' if mode == 'a' else 'w') as file:
                 file.write(content)
+            if mode == 'a':
+                message = t('tool.success_appended', path=full_path)
+            else:
+                message = t('tool.success_written', path=full_path)
             return {
-                "status": "success",
-                "message": f"Content successfully {'appended to' if mode == 'a' else 'written to'} {full_path}"
+                "status": t('tool.success_status'),
+                "message": message
             }
         except Exception as e:
             return {
-                "status": "error",
+                "status": t('tool.error_status'),
                 "message": str(e)
             }
 

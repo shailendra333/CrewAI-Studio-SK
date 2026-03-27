@@ -2,18 +2,19 @@ from typing import Optional, Dict, Any, Type
 from crewai.tools import BaseTool
 import requests
 from pydantic import BaseModel, Field
+from i18n import t
 
 
 class CustomApiToolInputSchema(BaseModel):
-    endpoint: str = Field(..., description="The specific endpoint for the API call")
-    method: str = Field(..., description="HTTP method to use (GET, POST, PUT, DELETE)")
-    headers: Optional[Dict[str, str]] = Field(None, description="HTTP headers to include in the request")
-    query_params: Optional[Dict[str, Any]] = Field(None, description="Query parameters for the request")
-    body: Optional[Dict[str, Any]] = Field(None, description="Body of the request for POST/PUT methods")
+    endpoint: str = Field(..., description=t('tool.endpoint'))
+    method: str = Field(..., description=t('tool.http_method'))
+    headers: Optional[Dict[str, str]] = Field(None, description=t('tool.http_headers'))
+    query_params: Optional[Dict[str, Any]] = Field(None, description=t('tool.query_params'))
+    body: Optional[Dict[str, Any]] = Field(None, description=t('tool.request_body'))
 
 class CustomApiTool(BaseTool):
-    name: str = "Call Api"
-    description: str = "Tool to make API calls with customizable parameters"
+    name: str = t('tool.custom_api')
+    description: str = t('tool.custom_api_desc')
     args_schema: Type[BaseModel] = CustomApiToolInputSchema
     base_url: Optional[str] = None
     default_headers: Optional[Dict[str, str]] = None

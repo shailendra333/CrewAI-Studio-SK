@@ -11,18 +11,19 @@ from pg_results import PageResults
 from pg_knowledge import PageKnowledge
 from dotenv import load_dotenv
 from llms import load_secrets_fron_env
+from i18n import t, get_available_languages, get_current_language, set_language, setup_language_selector
 import os
 
 def pages():
     return {
-        'Crews': PageCrews(),
-        'Tools': PageTools(),
-        'Agents': PageAgents(),
-        'Tasks': PageTasks(),
-        'Knowledge': PageKnowledge(),  # Add this line
-        'Kickoff!': PageCrewRun(),
-        'Results': PageResults(),
-        'Import/export': PageExportCrew()
+        t('page.crews'): PageCrews(),
+        t('page.tools'): PageTools(),
+        t('page.agents'): PageAgents(),
+        t('page.tasks'): PageTasks(),
+        t('page.knowledge'): PageKnowledge(),
+        t('page.kickoff'): PageCrewRun(),
+        t('page.results'): PageResults(),
+        t('page.import_export'): PageExportCrew()
     }
 
 def load_data():
@@ -39,15 +40,18 @@ def draw_sidebar():
         st.image("img/crewai_logo.png")
 
         if 'page' not in ss:
-            ss.page = 'Crews'
-        
-        selected_page = st.radio('Page', list(pages().keys()), index=list(pages().keys()).index(ss.page),label_visibility="collapsed")
+            ss.page = t('page.crews')
+
+        page_keys = list(pages().keys())
+        selected_page = st.radio(t('language.select'), page_keys, index=page_keys.index(ss.page) if ss.page in page_keys else 0, label_visibility="collapsed")
         if selected_page != ss.page:
             ss.page = selected_page
             st.rerun()
-            
+
+        setup_language_selector()
+
 def main():
-    st.set_page_config(page_title="CrewAI Studio", page_icon="img/favicon.ico", layout="wide")
+    st.set_page_config(page_title=t('page.title'), page_icon="img/favicon.ico", layout="wide")
     load_dotenv()
     load_secrets_fron_env()
     if (str(os.getenv('AGENTOPS_ENABLED')).lower() in ['true', '1']) and not ss.get('agentops_failed', False):

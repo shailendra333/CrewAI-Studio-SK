@@ -6,36 +6,37 @@ import importlib.util
 from pydantic import BaseModel, Field
 import docker
 import base64
+from i18n import t
 
 class CustomCodeInterpreterSchema(BaseModel):
     """Input for CustomCodeInterpreterTool."""
     code: Optional[str] = Field(
         None,
-        description="Python3 code used to be interpreted in the Docker container. ALWAYS PRINT the final result and the output of the code",
+        description=t('tool.code_input'),
     )
 
     run_script: Optional[str] = Field(
         None,
-        description="Relative path to the script to run in the Docker container. The script should contain the code to be executed.",
+        description=t('tool.run_script'),
     )
 
     libraries_used: str = Field(
         ...,
-        description="List of libraries used in the code with proper installing names separated by commas. Example: numpy,pandas,beautifulsoup4",
+        description=t('tool.libraries_used'),
     )
 
     def check_code_or_run_script(cls, values):
         code = values.get('code')
         run_script = values.get('run_script')
         if not code and not run_script:
-            raise ValueError('Either code or run_script must be provided')
+            raise ValueError(t('tool.code_or_script_required'))
         if code and run_script:
-            raise ValueError('Only one of code or run_script should be provided')
+            raise ValueError(t('tool.code_or_script_only_one'))
         return values
 
 class CustomCodeInterpreterTool(BaseTool):
-    name: str = "Code Interpreter"
-    description: str = "Interprets Python3 code strings with a final print statement. Requires eighter code or run_script to be provided."
+    name: str = t('tool.code_interpreter')
+    description: str = t('tool.code_interpreter_desc')
     args_schema: Type[BaseModel] = CustomCodeInterpreterSchema
     code: Optional[str] = None
     run_script: Optional[str] = None

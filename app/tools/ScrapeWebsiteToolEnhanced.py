@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from pydantic import BaseModel, Field
 from crewai.tools import BaseTool
+from i18n import t
 
 
 class FixedScrapeWebsiteToolEnhancedSchema(BaseModel):
@@ -15,12 +16,12 @@ class FixedScrapeWebsiteToolEnhancedSchema(BaseModel):
 
 class ScrapeWebsiteToolEnhancedSchema(FixedScrapeWebsiteToolEnhancedSchema):
     """Dynamic input schema - what the agent sees and can set."""
-    website_url: str = Field(..., description="Mandatory website URL to read the file")
+    website_url: str = Field(..., description=t('tool.website_url'))
 
 
 class ScrapeWebsiteToolEnhanced(BaseTool):
-    name: str = "Read website content"
-    description: str = "A tool that can be used to read website content."
+    name: str = t('tool.scrape_website')
+    description: str = t('tool.scrape_website_desc')
     args_schema: Type[BaseModel] = ScrapeWebsiteToolEnhancedSchema
 
     website_url: Optional[str] = None
@@ -53,9 +54,7 @@ class ScrapeWebsiteToolEnhanced(BaseTool):
         self.css_selector = css_selector
 
         if website_url is not None and "description" not in kwargs:
-            self.description = (
-                f"A tool that can be used to read {website_url}'s content."
-            )
+            self.description = t('tool.scrape_website_url_desc', url=website_url)
             self.args_schema = FixedScrapeWebsiteToolEnhancedSchema
             self._generate_description()
         
@@ -262,7 +261,7 @@ class ScrapeWebsiteToolEnhanced(BaseTool):
             text = extract_text(pdf_file)
             return text
         except Exception as e:
-            return f"Error processing PDF: {e}"
+            return t('tool.error_pdf_processing', error=str(e))
         
     def _run(
         self,
@@ -270,7 +269,7 @@ class ScrapeWebsiteToolEnhanced(BaseTool):
     ) -> Any:
         website_url = kwargs.get("website_url", self.website_url)
         if not website_url:
-            return "Error: No website URL provided"
+            return t('tool.error_no_url')
             
         self.website_url = website_url
         css_selector = self.css_selector
@@ -349,6 +348,6 @@ class ScrapeWebsiteToolEnhanced(BaseTool):
             return metadata + "\n" + text if text else metadata + "No meaningful content found on the page."
             
         except requests.Timeout:
-            return "Error: Website request timed out"
+            return t('tool.error_timeout')
         except requests.RequestException as e:
-            return f"Error: Failed to fetch website content: {str(e)}"
+            return t('tool.error_fetch_failed', error=str(e))
