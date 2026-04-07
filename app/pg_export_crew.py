@@ -143,6 +143,20 @@ def create_anthropic_llm(model, temperature):
     else:
         raise ValueError("Anthropic API key not set in .env file")
 
+def create_azure_openai_llm(model, temperature):
+    api_key     = os.getenv('AZURE_API_KEY')
+    api_base    = os.getenv('AZURE_API_BASE')
+    api_version = os.getenv('AZURE_API_VERSION', '2024-02-01')
+    if api_key and api_base:
+        os.environ["AZURE_API_KEY"]     = api_key
+        os.environ["AZURE_API_BASE"]    = api_base
+        os.environ["AZURE_API_VERSION"] = api_version
+        from crewai import LLM
+        return LLM(model=model, temperature=temperature,
+                   api_key=api_key, base_url=api_base, api_version=api_version)
+    else:
+        raise ValueError("Azure OpenAI API key and endpoint not set in .env file")
+
 def safe_pop_env_var(key):
     try:
         os.environ.pop(key)
@@ -161,6 +175,9 @@ LLM_CONFIG = {{
     }},
     "Anthropic": {{
         "create_llm": create_anthropic_llm
+    }},
+    "Azure OpenAI": {{
+        "create_llm": create_azure_openai_llm
     }}
 }}
 
@@ -236,6 +253,9 @@ if __name__ == '__main__':
 # GROQ_API_KEY="FILL-IN-YOUR-GROQ-API-KEY"
 # ANTHROPIC_API_KEY="FILL-IN-YOUR-ANTHROPIC-API-KEY"
 # LMSTUDIO_API_BASE="http://localhost:1234/v1"
+# AZURE_API_KEY="FILL-IN-YOUR-AZURE-OPENAI-API-KEY"
+# AZURE_API_BASE="https://<your-resource>.openai.azure.com/"
+# AZURE_API_VERSION="2024-02-01"
 """
         with open(os.path.join(output_dir, '.env'), 'w') as f:
             f.write(env_content)

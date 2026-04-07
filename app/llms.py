@@ -19,6 +19,9 @@ def load_secrets_fron_env():
             "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
             "OLLAMA_HOST": os.getenv("OLLAMA_HOST"),
             "XAI_API_KEY": os.getenv("XAI_API_KEY"),
+            "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY"),
+            "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT"),
+            "AZURE_OPENAI_API_VERSION": os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01"),
         }
     else:
         st.session_state.env_vars = st.session_state.env_vars
@@ -110,6 +113,29 @@ def create_xai_llm(model, temperature):
         base_url=host
     )
 
+def create_azure_openai_llm(model, temperature):
+    api_key     = st.session_state.env_vars.get("AZURE_OPENAI_API_KEY")
+    api_base    = st.session_state.env_vars.get("AZURE_OPENAI_ENDPOINT")
+    api_version = st.session_state.env_vars.get("AZURE_OPENAI_API_VERSION", "2024-02-01")
+
+    if not api_key or not api_base:
+        raise ValueError("Azure OpenAI API key and endpoint must be set in .env file")
+
+    # LiteLLM (used by CrewAI's LLM class) reads these env vars for Azure
+    switch_environment({
+        "AZURE_API_KEY":     api_key,
+        "AZURE_API_BASE":    api_base,
+        "AZURE_API_VERSION": api_version,
+    })
+
+    return LLM(
+        model=model,            # e.g. "azure/gpt-4o"
+        temperature=temperature,
+        api_key=api_key,
+        base_url=api_base,
+        api_version=api_version,
+    )
+
 def create_lmstudio_llm(model, temperature):
     switch_environment({
         "OPENAI_API_KEY": "lm-studio",
@@ -151,6 +177,10 @@ LLM_CONFIG = {
      "Xai": {
         "models": ["xai/grok-2-1212", "xai/grok-beta"],
         "create_llm": create_xai_llm,
+    },
+    "Azure OpenAI": {
+        "models": os.getenv("AZURE_OPENAI_DEPLOYMENT_NAMES", "").split(",") if os.getenv("AZURE_OPENAI_DEPLOYMENT_NAMES") else ["azure/gpt-4o", "azure/gpt-4o-mini"],
+        "create_llm": create_azure_openai_llm,
     },
 }
 
